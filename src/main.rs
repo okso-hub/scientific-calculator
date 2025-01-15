@@ -218,7 +218,7 @@ impl eframe::App for CalculatorApp {
                 .spacing(egui::vec2(5.0, 5.0))
                 .show(ui, |ui| {
                     // Erste Reihe
-                    for btn in ["C", "±", "π", "÷"].iter() {
+                    for btn in ["C", "±", "π", "/"].iter() {
                         if ui.add_sized(button_size, egui::Button::new(*btn)).clicked() {
                             self.handle_button(btn);
                         }
@@ -227,7 +227,7 @@ impl eframe::App for CalculatorApp {
 
                     // Weitere Reihen
                     for row in [
-                        ["7", "8", "9", "×"],
+                        ["7", "8", "9", "*"],
                         ["4", "5", "6", "-"],
                         ["1", "2", "3", "+"],
                         ["0", ".", "e", "="],
