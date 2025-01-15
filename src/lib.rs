@@ -19,7 +19,82 @@ impl Default for CalculatorApp {
     }
 }
 
+#[derive(Debug, Clone)]
+enum Token {
+    Number(f64),
+    Operator(char),
+}
+
 impl CalculatorApp {
+    fn get_precedence(op: char) -> u8 {
+        match op {
+            '+' | '-' => 1,
+            '*' | '/' => 2,
+            _ => 0,
+        }
+    }
+
+    fn infix_to_postfix(&self, tokens: Vec<&str>) -> Result<Vec<Token>, String> {
+        let mut output = Vec::new();
+        let mut operator_stack = Vec::new();
+
+        for token in tokens {
+            match token {
+                "+" | "-" | "*" | "/" => {
+                    let op = token.chars().next().unwrap();
+                    while let Some(&top) = operator_stack.last() {
+                        if Self::get_precedence(top) >= Self::get_precedence(op) {
+                            output.push(Token::Operator(operator_stack.pop().unwrap()));
+                        } else {
+                            break;
+                        }
+                    }
+                    operator_stack.push(op);
+                }
+                num => {
+                    let number = num.parse::<f64>()
+                        .map_err(|_| "Invalid number".to_string())?;
+                    output.push(Token::Number(number));
+                }
+            }
+        }
+
+        while let Some(op) = operator_stack.pop() {
+            output.push(Token::Operator(op));
+        }
+
+        Ok(output)
+    }
+
+    fn evaluate_postfix(&self, postfix: Vec<Token>) -> Result<f64, String> {
+        let mut stack = Vec::new();
+
+        for token in postfix {
+            match token {
+                Token::Number(num) => stack.push(num),
+                Token::Operator(op) => {
+                    let b = stack.pop().ok_or("Invalid expression")?;
+                    let a = stack.pop().ok_or("Invalid expression")?;
+                    let result = match op {
+                        '+' => a + b,
+                        '-' => a - b,
+                        '*' => a * b,
+                        '/' => {
+                            if b == 0.0 {
+                                return Err("Division by zero".to_string());
+                            }
+                            a / b
+                        }
+                        _ => return Err("Invalid operator".to_string()),
+                    };
+                    stack.push(result);
+                }
+            }
+        }
+
+        stack.pop().ok_or("Invalid expression".to_string())
+    }
+
     fn format_expression(&self, expr: &str) -> String {
         let mut formatted = String::new();
         let mut prev_char_is_digit = false;
@@ -50,49 +125,18 @@ impl CalculatorApp {
     }
 
     fn evaluate(&self, expr: &str) -> Result<f64, String> {
-        // Format the expression first with proper spacing
         let formatted_expr = self.format_expression(expr);
-        println!("Formatted expression: {}", formatted_expr); // Debug log
+        println!("Formatted expression: {}", formatted_expr);
         
-        // Split formatted expression into tokens
         let tokens: Vec<&str> = formatted_expr.split_whitespace().collect();
-        println!("Tokens: {:?}", tokens); // Debug log
+        println!("Tokens: {:?}", tokens);
         
-        // Need at least one number
         if tokens.is_empty() {
             return Err("Empty expression".to_string());
         }
 
-        // If single number, parse and return it
-        if tokens.len() == 1 {
-            return tokens[0].parse::<f64>()
-                .map_err(|_| "Invalid number".to_string());
-        }
-
-        // Need three tokens for operation: number operator number
-        if tokens.len() != 3 {
-            return Err("Invalid expression format".to_string());
-        }
-
-        let left = tokens[0].parse::<f64>()
-            .map_err(|_| "Invalid first number".to_string())?;
-        let operator = tokens[1];
-        let right = tokens[2].parse::<f64>()
-            .map_err(|_| "Invalid second number".to_string())?;
-
-        match operator {
-            "+" => Ok(left + right),
-            "-" => Ok(left - right),
-            "*" => Ok(left * right),
-            "/" => {
-                if right == 0.0 {
-                    Err("Division by zero".to_string())
-                } else {
-                    Ok(left / right)
-                }
-            },
-            _ => Err("Invalid operator".to_string())
-        }
+        let postfix = self.infix_to_postfix(tokens)?;
+        self.evaluate_postfix(postfix)
     }
 
     fn handle_button(&mut self, text: &str) {
@@ -270,6 +314,26 @@ mod tests {
         assert!(calc.evaluate("").is_err());
         assert!(calc.evaluate("abc").is_err());
         assert!(calc.evaluate("5/0").is_err());
-        assert!(calc.evaluate("1+2+3").is_err());
+        // Removed test for "1+2+3" as it's now valid
+    }
+
+    #[test]
+    fn test_multiple_operations() {
+        let calc = CalculatorApp::default();
+        
+        assert_eq!(calc.evaluate("1+2+3").unwrap(), 6.0);
+        assert_eq!(calc.evaluate("10-2-3").unwrap(), 5.0);
+        assert_eq!(calc.evaluate("2*3*4").unwrap(), 24.0);
+        assert_eq!(calc.evaluate("24/2/3").unwrap(), 4.0);
+        assert_eq!(calc.evaluate("1+2*3").unwrap(), 7.0);  // Updated: 2*3 = 6, then 1+6 = 7
+    }
+
+    #[test]
+    fn test_operator_precedence() {
+        let calc = CalculatorApp::default();
+        assert_eq!(calc.evaluate("32-6*6").unwrap(), -4.0);
+        assert_eq!(calc.evaluate("2+3*4").unwrap(), 14.0);
+        assert_eq!(calc.evaluate("10/2*5").unwrap(), 25.0);
+        assert_eq!(calc.evaluate("2*3+4*5").unwrap(), 26.0);
     }
 }
