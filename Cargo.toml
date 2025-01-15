@@ -11,6 +11,10 @@ num = "0.4"
 # Für mathematische Funktionen
 libm = "0.2.7"
 
+[lib]
+name = "simple_gui"
+path = "src/lib.rs"
+
 [[bin]]
-name = "scientific_calculator"
+name = "simple_gui"
 path = "src/main.rs"
