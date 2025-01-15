@@ -41,18 +41,20 @@ impl CalculatorApp {
         for c in expr.chars() {
             match c {
                 '0'..='9' | '.' => {
-                    if !prev_char_is_digit && !formatted.is_empty() {
+                    if !prev_char_is_digit && !formatted.is_empty() && !formatted.ends_with(' ') {
                         formatted.push(' ');
                     }
                     formatted.push(c);
                     prev_char_is_digit = true;
                 }
                 '+' | '-' | '*' | '/' => {
-                    if prev_char_is_digit {
+                    if prev_char_is_digit && !formatted.ends_with(' ') {
                         formatted.push(' ');
                     }
                     formatted.push(c);
-                    formatted.push(' ');
+                    if !formatted.ends_with(' ') {
+                        formatted.push(' ');
+                    }
                     prev_char_is_digit = false;
                 }
                 _ => {}
@@ -241,5 +243,47 @@ impl eframe::App for CalculatorApp {
                     }
                 });
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculator_initialization() {
+        let calc = CalculatorApp::default();
+        assert_eq!(calc.display, "0");
+        assert_eq!(calc.current_input, "");
+        assert_eq!(calc.last_result, 0.0);
+    }
+
+    #[test]
+    fn test_basic_arithmetic() {
+        let calc = CalculatorApp::default();
+        
+        assert_eq!(calc.evaluate("5+3").unwrap(), 8.0);
+        assert_eq!(calc.evaluate("10-4").unwrap(), 6.0);
+        assert_eq!(calc.evaluate("8*8").unwrap(), 64.0);
+        assert_eq!(calc.evaluate("15/3").unwrap(), 5.0);
+    }
+
+    #[test]
+    fn test_format_expression() {
+        let calc = CalculatorApp::default();
+        
+        assert_eq!(calc.format_expression("5+3"), "5 + 3");
+        assert_eq!(calc.format_expression("10*5"), "10 * 5");
+        assert_eq!(calc.format_expression("8-2"), "8 - 2");
+    }
+
+    #[test]
+    fn test_error_handling() {
+        let calc = CalculatorApp::default();
+        
+        assert!(calc.evaluate("").is_err());
+        assert!(calc.evaluate("abc").is_err());
+        assert!(calc.evaluate("5/0").is_err());
+        assert!(calc.evaluate("1+2+3").is_err());
     }
 }
