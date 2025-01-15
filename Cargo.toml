@@ -1,0 +1,16 @@
+[package]
+name = "scientific_calculator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.22.0"
+egui = "0.22.0"
+# Für wissenschaftliche Berechnungen
+num = "0.4"
+# Für mathematische Funktionen
+libm = "0.2.7"
+
+[[bin]]
+name = "scientific_calculator"
+path = "src/main.rs"
