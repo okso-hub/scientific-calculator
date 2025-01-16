@@ -23,6 +23,7 @@ impl Default for CalculatorApp {
 enum Token {
     Number(f64),
     Operator(char),
+    Function(String),
 }
 
 impl CalculatorApp {
@@ -40,27 +41,35 @@ impl CalculatorApp {
 
         for token in tokens {
             match token {
+                "sin" | "cos" | "tan" => {
+                    operator_stack.push(Token::Function(token.to_string()));
+                }
                 "+" | "-" | "*" | "/" => {
                     let op = token.chars().next().unwrap();
-                    while let Some(&top) = operator_stack.last() {
-                        if Self::get_precedence(top) >= Self::get_precedence(op) {
-                            output.push(Token::Operator(operator_stack.pop().unwrap()));
-                        } else {
-                            break;
+                    while let Some(top) = operator_stack.last() {
+                        match top {
+                            Token::Operator(top_op) if Self::get_precedence(*top_op) >= Self::get_precedence(op) => {
+                                output.push(operator_stack.pop().unwrap());
+                            }
+                            Token::Function(_) => {
+                                output.push(operator_stack.pop().unwrap());
+                            }
+                            _ => break,
                         }
                     }
-                    operator_stack.push(op);
+                    operator_stack.push(Token::Operator(op));
                 }
                 num => {
-                    let number = num.parse::<f64>()
-                        .map_err(|_| "Invalid number".to_string())?;
-                    output.push(Token::Number(number));
+                    match num.parse::<f64>() {
+                        Ok(n) => output.push(Token::Number(n)),
+                        Err(_) => return Err("Invalid number".to_string()),
+                    }
                 }
             }
         }
 
         while let Some(op) = operator_stack.pop() {
-            output.push(Token::Operator(op));
+            output.push(op);
         }
 
         Ok(output)
@@ -89,6 +98,18 @@ impl CalculatorApp {
                     };
                     stack.push(result);
                 }
+                Token::Function(func) => {
+                    let a = stack.pop().ok_or("Invalid expression")?;
+                    // Convert degrees to radians if not in rad_mode
+                    let angle = if !self.rad_mode { a.to_radians() } else { a };
+                    let result = match func.as_str() {
+                        "sin" => angle.sin(),
+                        "cos" => angle.cos(),
+                        "tan" => angle.tan(),
+                        _ => return Err("Unknown function".to_string()),
+                    };
+                    stack.push(result);
+                }
             }
         }
 
@@ -98,10 +119,20 @@ impl CalculatorApp {
     fn format_expression(&self, expr: &str) -> String {
         let mut formatted = String::new();
         let mut prev_char_is_digit = false;
+        let mut current_word = String::new();
 
         for c in expr.chars() {
             match c {
+                'a'..='z' | 'A'..='Z' => {
+                    current_word.push(c);
+                    prev_char_is_digit = false;
+                }
                 '0'..='9' | '.' => {
+                    if !current_word.is_empty() {
+                        formatted.push_str(&current_word);
+                        formatted.push(' ');
+                        current_word.clear();
+                    }
                     if !prev_char_is_digit && !formatted.is_empty() && !formatted.ends_with(' ') {
                         formatted.push(' ');
                     }
@@ -109,18 +140,26 @@ impl CalculatorApp {
                     prev_char_is_digit = true;
                 }
                 '+' | '-' | '*' | '/' => {
+                    if !current_word.is_empty() {
+                        formatted.push_str(&current_word);
+                        formatted.push(' ');
+                        current_word.clear();
+                    }
                     if prev_char_is_digit && !formatted.ends_with(' ') {
                         formatted.push(' ');
                     }
                     formatted.push(c);
-                    if !formatted.ends_with(' ') {
-                        formatted.push(' ');
-                    }
+                    formatted.push(' ');
                     prev_char_is_digit = false;
                 }
                 _ => {}
             }
         }
+
+        if !current_word.is_empty() {
+            formatted.push_str(&current_word);
+        }
+
         formatted.trim().to_string()
     }
 
@@ -335,5 +374,32 @@ mod tests {
         assert_eq!(calc.evaluate("2+3*4").unwrap(), 14.0);
         assert_eq!(calc.evaluate("10/2*5").unwrap(), 25.0);
         assert_eq!(calc.evaluate("2*3+4*5").unwrap(), 26.0);
+    }
+
+    #[test]
+    fn test_trigonometric_functions() {
+        let calc = CalculatorApp::default();
+        
+        // Test in radians mode
+        assert!((calc.evaluate("sin0").unwrap() - 0.0).abs() < 1e-10);
+        assert!((calc.evaluate("cos0").unwrap() - 1.0).abs() < 1e-10);
+        assert!((calc.evaluate("tan0").unwrap() - 0.0).abs() < 1e-10);
+        
+        // Test with calculations
+        assert!((calc.evaluate("sin90").unwrap() - 1.0).abs() < 1e-10);
+        assert!((calc.evaluate("cos90").unwrap() - 0.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_function_with_operations() {
+        let mut calc = CalculatorApp::default();
+        calc.rad_mode = false;  // Use degree mode for testing
+        
+        // sin(90) = 1, then 1 - 1 = 0
+        assert!((calc.evaluate("sin90-1").unwrap() - 0.0).abs() < 1e-10);
+        // cos(0) = 1, then 1 + 1 = 2
+        assert!((calc.evaluate("cos0+1").unwrap() - 2.0).abs() < 1e-10);
+        // tan(45) = 1, then 1 * 2 = 2
+        assert!((calc.evaluate("tan45*2").unwrap() - 2.0).abs() < 1e-10);
     }
 }
