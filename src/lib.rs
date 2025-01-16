@@ -41,7 +41,7 @@ impl CalculatorApp {
 
         for token in tokens {
             match token {
-                "sin" | "cos" | "tan" => {
+                "sin" | "cos" | "tan" | "ln" | "log" | "asin" | "acos" | "atan" => {
                     operator_stack.push(Token::Function(token.to_string()));
                 }
                 "+" | "-" | "*" | "/" => {
@@ -123,6 +123,48 @@ impl CalculatorApp {
                                 "sin" => angle.sin(),
                                 "cos" => angle.cos(),
                                 "tan" => angle.tan(),
+                                "ln" => {
+                                    if a <= 0.0 {
+                                        return Err("Invalid input for logarithm".to_string());
+                                    }
+                                    a.ln()
+                                },
+                                "log" => {
+                                    if a <= 0.0 {
+                                        return Err("Invalid input for logarithm".to_string());
+                                    }
+                                    a.log10()
+                                },
+                                "asin" => {
+                                    if a < -1.0 || a > 1.0 {
+                                        return Err("Invalid input for asin".to_string());
+                                    }
+                                    let result = a.asin();
+                                    if !self.rad_mode {
+                                        result.to_degrees()
+                                    } else {
+                                        result
+                                    }
+                                },
+                                "acos" => {
+                                    if a < -1.0 || a > 1.0 {
+                                        return Err("Invalid input for acos".to_string());
+                                    }
+                                    let result = a.acos();
+                                    if !self.rad_mode {
+                                        result.to_degrees()
+                                    } else {
+                                        result
+                                    }
+                                },
+                                "atan" => {
+                                    let result = a.atan();
+                                    if !self.rad_mode {
+                                        result.to_degrees()
+                                    } else {
+                                        result
+                                    }
+                                },
                                 _ => return Err("Unknown function".to_string()),
                             }
                         }
@@ -420,5 +462,26 @@ mod tests {
         assert!((calc.evaluate("cos0+1").unwrap() - 2.0).abs() < 1e-10);
         // tan(45) = 1, then 1 * 2 = 2
         assert!((calc.evaluate("tan45*2").unwrap() - 2.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_log_functions() {
+        let calc = CalculatorApp::default();
+        assert!((calc.evaluate("ln1").unwrap() - 0.0).abs() < 1e-10);
+        assert!((calc.evaluate("log10").unwrap() - 1.0).abs() < 1e-10);
+        assert!(calc.evaluate("ln0").is_err());
+        assert!(calc.evaluate("log0").is_err());
+    }
+
+    #[test]
+    fn test_inverse_trig_functions() {
+        let mut calc = CalculatorApp::default();
+        calc.rad_mode = false;  // Use degree mode
+        
+        assert!((calc.evaluate("asin0").unwrap() - 0.0).abs() < 1e-10);
+        assert!((calc.evaluate("acos1").unwrap() - 0.0).abs() < 1e-10);
+        assert!((calc.evaluate("atan0").unwrap() - 0.0).abs() < 1e-10);
+        assert!(calc.evaluate("asin2").is_err());
+        assert!(calc.evaluate("acos-2").is_err());
     }
 }
