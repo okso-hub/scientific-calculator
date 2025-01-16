@@ -7,7 +7,7 @@ A scientific calculator built with Rust and egui framework, offering a modern gr
 
 - [x] Basic arithmetic operations with two arguments (+, -, *, /)
 - [ ] Scientific functions (sin, cos, tan, log)
-- [ ] Trigonometric functions in both RAD/DEG modes
+- [x] Trigonometric functions in both RAD/DEG modes
 - [x] Constants (π, e)
 - [x] Error handling and input validation
 - [x] Clean and intuitive GUI
@@ -62,3 +62,6 @@ Tests cover:
 - Basic arithmetic operations
 - Expression formatting
 - Error handling
+
+## Preview
+<img width="512" alt="image" src="https://github.com/user-attachments/assets/8c507cad-d9d2-4701-b874-ab9180ebf4d5" />
