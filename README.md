@@ -1,6 +1,11 @@
 # Scientific Calculator
 ![rust](https://github.com/okso-hub/scientific-calculator/actions/workflows/rust.yml/badge.svg)
 
+> [!CAUTION] 
+> This calculator is currently under active development. While it offers a broad range of scientific functionalities, please be aware that certain calculations might not work as expected. 
+> 
+> I **strongly** advise against using this tool for any critical or sensitive computations.
+
 A scientific calculator built with Rust and egui framework, offering a modern graphical interface for mathematical calculations.
 
 ## Features (and whether they work)
