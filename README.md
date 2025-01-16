@@ -6,7 +6,7 @@ A scientific calculator built with Rust and egui framework, offering a modern gr
 ## Features (and whether they work)
 
 - [x] Basic arithmetic operations with two arguments (+, -, *, /)
-- [ ] Scientific functions (sin, cos, tan, log)
+- [x] Scientific functions (sin, cos, tan, log)
 - [x] Trigonometric functions in both RAD/DEG modes
 - [x] Constants (π, e)
 - [x] Error handling and input validation
