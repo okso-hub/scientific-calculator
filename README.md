@@ -1,5 +1,4 @@
 # Scientific Calculator
-![tests](https://github.com/okso-hub/scientific-calculator/actions/workflows/run_tests.yml/badge.svg)
 ![rust](https://github.com/okso-hub/scientific-calculator/actions/workflows/rust.yml/badge.svg)
 
 A scientific calculator built with Rust and egui framework, offering a modern graphical interface for mathematical calculations.
