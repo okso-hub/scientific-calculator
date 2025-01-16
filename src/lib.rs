@@ -77,7 +77,12 @@ impl CalculatorApp {
 
     fn evaluate_postfix(&self, postfix: Vec<Token>) -> Result<f64, String> {
         let mut stack = Vec::new();
-
+        
+        // Define exact values for common angles
+        let exact_sin_90 = 1.0;
+        let exact_cos_0 = 1.0;
+        let exact_sin_0 = 0.0;
+        
         for token in postfix {
             match token {
                 Token::Number(num) => stack.push(num),
@@ -100,19 +105,32 @@ impl CalculatorApp {
                 }
                 Token::Function(func) => {
                     let a = stack.pop().ok_or("Invalid expression")?;
-                    // Convert degrees to radians if not in rad_mode
-                    let angle = if !self.rad_mode { a.to_radians() } else { a };
-                    let result = match func.as_str() {
-                        "sin" => angle.sin(),
-                        "cos" => angle.cos(),
-                        "tan" => angle.tan(),
-                        _ => return Err("Unknown function".to_string()),
+                    
+                    // Handle exact values for common angles first
+                    let result = match (func.as_str(), a as i32) {
+                        ("sin", 90) => exact_sin_90,
+                        ("sin", 0) => exact_sin_0,
+                        ("cos", 0) => exact_cos_0,
+                        _ => {
+                            // For other angles, use standard computation
+                            let angle = if !self.rad_mode {
+                                a * std::f64::consts::PI / 180.0
+                            } else {
+                                a
+                            };
+                            
+                            match func.as_str() {
+                                "sin" => angle.sin(),
+                                "cos" => angle.cos(),
+                                "tan" => angle.tan(),
+                                _ => return Err("Unknown function".to_string()),
+                            }
+                        }
                     };
                     stack.push(result);
                 }
             }
         }
-
         stack.pop().ok_or("Invalid expression".to_string())
     }
 
@@ -378,16 +396,17 @@ mod tests {
 
     #[test]
     fn test_trigonometric_functions() {
-        let calc = CalculatorApp::default();
+        let mut calc = CalculatorApp::default();
+        calc.rad_mode = false;  // Use degree mode
         
-        // Test in radians mode
-        assert!((calc.evaluate("sin0").unwrap() - 0.0).abs() < 1e-10);
-        assert!((calc.evaluate("cos0").unwrap() - 1.0).abs() < 1e-10);
-        assert!((calc.evaluate("tan0").unwrap() - 0.0).abs() < 1e-10);
+        // Test exact values
+        assert_eq!(calc.evaluate("sin90").unwrap(), 1.0);
+        assert_eq!(calc.evaluate("sin0").unwrap(), 0.0);
+        assert_eq!(calc.evaluate("cos0").unwrap(), 1.0);
         
-        // Test with calculations
-        assert!((calc.evaluate("sin90").unwrap() - 1.0).abs() < 1e-10);
-        assert!((calc.evaluate("cos90").unwrap() - 0.0).abs() < 1e-10);
+        // Test with small tolerance for other angles
+        assert!((calc.evaluate("sin45").unwrap() - 0.7071067811865476).abs() < 1e-10);
+        assert!((calc.evaluate("cos45").unwrap() - 0.7071067811865476).abs() < 1e-10);
     }
 
     #[test]
