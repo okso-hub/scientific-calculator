@@ -1,5 +1,11 @@
 # Scientific Calculator
+
+<div align="center">
+
 ![rust](https://github.com/okso-hub/scientific-calculator/actions/workflows/rust.yml/badge.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/okso-hub/scientific-calculator/blob/main/LICENSE)
+
+</div>
 
 > [!CAUTION] 
 > This calculator is currently under active development. While it offers a broad range of scientific functionalities, please be aware that certain calculations might not work as expected. 
